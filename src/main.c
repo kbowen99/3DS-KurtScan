@@ -248,7 +248,7 @@ int main() {
 		// printf("\nPress 'A' to finish Setup");
 		// consoleClear();
 		
-		if (kDown && (KEY_A && KEY_B)){
+		if (kDown & KEY_A){
 			setup = !setup;
 		}
 		
