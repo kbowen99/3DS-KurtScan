@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include <3ds/svc.h>
 #include "mem.h"
-//#include 
+//#include
 
 #define CONFIG_3D_SLIDERSTATE (*(volatile float*)0x1FF81080)
 #define WAIT_TIMEOUT 300000000ULL
@@ -107,7 +107,7 @@ bool SaveDrawing(char* path)
 	FS_archive sdmcArchive;
 	sdmcArchive = (FS_archive){ 0x9, (FS_path){ PATH_EMPTY, 1, (u8*)"" } };
 	FSUSER_OpenArchive(NULL, &sdmcArchive);
-	
+
 	Handle file;
 	FS_path filePath;
 	filePath.type = PATH_CHAR;
@@ -161,7 +161,7 @@ void screenShot() {
 	char file[256];
 	snprintf(file, 256, "/cam/pic%08d.bmp", timestamp);
 	if (SaveDrawing(file)){
-		
+
 	}
 }
 
@@ -173,11 +173,11 @@ int main() {
 	acInit();
 	gfxInitDefault();
 	consoleInit(GFX_BOTTOM, NULL);
-	
 
-	
 
-	
+
+
+
 
 	// Enable double buffering to remove screen tearing
 	gfxSetDoubleBuffering(GFX_TOP, true);
@@ -223,59 +223,58 @@ int main() {
 	printf("Use slider to enable/disable 3D\n");
 	printf("Press Start to exit to Homebrew Launcher\n");
 
-	
-	
+
+
 	int i = 0;
 	int waitTime = 500;
 	int count = 0;
 	int maxCount = 20;
 	bool setup = false;
-	
+
 	consoleClear();
 	while(!setup){
-		char w[5];
-		char m[5];
-		sprintf(w,"%d",waitTime);
-		sprintf(m,"%d",maxCount);
-		
+
 		hidScanInput();
 		kDown = hidKeysDown();
 		kHeld = hidKeysHeld();
-		// printf("\nMaxCount (Left/Right)\n");
-		// printf(m); 
-		// printf("\nWaitTime (Up/Down)\n");
-		// printf(w); 
-		// printf("\nPress 'A' to finish Setup");
-		// consoleClear();
-		
+
+
 		if (kDown & KEY_A){
 			setup = !setup;
 		}
-		
+
 		if (kDown){
-			if (KEY_DUP){
-				waitTime = waitTime + 5;
-				printf("\nWaitTime (Up/Down)\n");
-				printf(w);
+			if (kDown & KEY_DUP){
+				waitTime = waitTime + 1;
 			}
-			if (KEY_DDOWN){
-				waitTime = waitTime - 5;
-				printf("\nWaitTime (Up/Down)\n");
-				printf(w);
+			if (kDown & KEY_DDOWN){
+				waitTime = waitTime - 1;
 			}
-			if (KEY_DLEFT){
-				maxCount = maxCount - 5;
-				printf("\nMaxCount (Left/Right)\n");
-				printf(m); 
+			if (kDown & KEY_DLEFT){
+				maxCount = maxCount - 1;
 			}
-			if (KEY_DRIGHT){
-				maxCount = maxCount + 5;
-				printf("\nMaxCount (Left/Right)\n");
-				printf(m); 
+			if (kDown & KEY_DRIGHT){
+				maxCount = maxCount + 1;
 			}
+			char w[5];
+			char m[5];
+			sprintf(w,"%d",waitTime);
+			sprintf(m,"%d",maxCount);
+
+			consoleClear();
+			printf("\nMaxCount (Left/Right)\n");
+			printf(m);
+			printf("\nWaitTime (Up/Down)\n");
+			printf(w);
+			printf("\nPress 'A' to finish Setup\n");
+			printf("Waiting...");
+
 		}
 	}
-	
+
+	printf("Press Start to exit to Homebrew Launcher\n");
+	printf("Starting auto Capture...\n");
+
 	// Main loop
 	while (aptMainLoop()) {
 		// Read which buttons are currently pressed or not
@@ -291,12 +290,12 @@ int main() {
 		if ((kHeld & KEY_R) && !held_R) {
 			held_R = true;
 		}
-		
-		
+
+
 		if (!(kHeld & KEY_R)) {
 			held_R = false;
 		}
-		
+
 		if (held_R || (i == waitTime && count < maxCount)){
 			printf("Capturing new image\n");
 			gfxFlushBuffers();
@@ -309,8 +308,9 @@ int main() {
 			count = count + 1;
 		} else {
 			i = i + 1;
+			printf("DONE...");
 		}
-		
+
 
 
 
@@ -327,7 +327,7 @@ int main() {
 		gfxFlushBuffers();
 		gspWaitForVBlank();
 		gfxSwapBuffers();
-		
+
 		//sleep(1000);
 	}
 
@@ -338,7 +338,3 @@ int main() {
 	// Return to hbmenu
 	return 0;
 }
-
-
-
- 
