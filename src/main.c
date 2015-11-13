@@ -43,9 +43,11 @@ void hang(char *message) {
 }
 
 void cleanup() {
+	csndExit();
 	camExit();
 	gfxExit();
 	acExit();
+	srvExit();
 }
 
 void writePictureToFramebufferRGB565(void *fb, void *img, u16 x, u16 y, u16 width, u16 height) {
@@ -88,7 +90,7 @@ void takePicture3D(u8 *buf) {
 	printf("CAMU_SetReceiving: 0x%08X\n", (unsigned int) CAMU_SetReceiving(&camReceiveEvent2, buf + SCREEN_SIZE, PORT_CAM2, SCREEN_SIZE, (s16) bufSize));
 	printf("svcWaitSynchronization: 0x%08X\n", (unsigned int) svcWaitSynchronization(camReceiveEvent, WAIT_TIMEOUT));
 	printf("svcWaitSynchronization: 0x%08X\n", (unsigned int) svcWaitSynchronization(camReceiveEvent2, WAIT_TIMEOUT));
-	printf("CAMU_PlayShutterSound: 0x%08X\n", (unsigned int) CAMU_PlayShutterSound(SHUTTER_SOUND_TYPE_NORMAL));
+	//printf("CAMU_PlayShutterSound: 0x%08X\n", (unsigned int) CAMU_PlayShutterSound(SHUTTER_SOUND_TYPE_NORMAL));
 
 	printf("CAMU_StopCapture: 0x%08X\n", (unsigned int) CAMU_StopCapture(PORT_BOTH));
 
@@ -168,12 +170,24 @@ void screenShot() {
 
 
 
+
 int main() {
 	// Initializations
+	srvInit();
 	acInit();
 	gfxInitDefault();
+	csndInit();
 	consoleInit(GFX_BOTTOM, NULL);
 
+	FILE *file = fopen("tone.wav", "rb");
+	fseek(file, 0, SEEK_END);
+	u32 sndSize = ftell(file);
+	fseek(file, 0, SEEK_SET);
+	sndSize = sndSize - 0x48;
+	fseek(file, 0x48, SEEK_SET);
+	u8 *sndBuf = linearAlloc(sndSize);
+	fread(sndBuf, 1, sndSize, file);
+	fclose(file);
 
 
 
@@ -304,6 +318,9 @@ int main() {
 
 			takePicture3D(buf);
 			screenShot();
+
+			//Beep();
+			csndPlaySound(0x8, SOUND_FORMAT_16BIT, 44100, 1, 0, sndBuf, sndBuf, sndSize);
 			i = 0;
 			count = count + 1;
 		} else {
@@ -333,6 +350,13 @@ int main() {
 
 	// Exit
 	free(buf);
+	csndExecCmds(true);
+	CSND_SetPlayState(0x8, 0);
+	csndExecCmds(true);
+	memset(sndBuf, 0, sndSize);
+	GSPGPU_FlushDataCache(NULL, sndBuf, sndSize);
+	linearFree(sndBuf);
+	csndExecCmds(true);
 	cleanup();
 
 	// Return to hbmenu
