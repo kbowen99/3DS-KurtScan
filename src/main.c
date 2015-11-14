@@ -43,11 +43,11 @@ void hang(char *message) {
 }
 
 void cleanup() {
-	csndExit();
+	//csndExit();
 	camExit();
 	gfxExit();
 	acExit();
-	srvExit();
+	//srvExit();
 }
 
 void writePictureToFramebufferRGB565(void *fb, void *img, u16 x, u16 y, u16 width, u16 height) {
@@ -173,7 +173,7 @@ void screenShot() {
 
 int main() {
 	// Initializations
-	srvInit();
+	//srvInit();
 	acInit();
 	gfxInitDefault();
 	csndInit();
@@ -325,7 +325,6 @@ int main() {
 			count = count + 1;
 		} else {
 			i = i + 1;
-			printf("DONE...");
 		}
 
 
@@ -348,15 +347,46 @@ int main() {
 		//sleep(1000);
 	}
 
+	printf("\nClosing App");
+
+		printf("\nfreeing buf");
 	// Exit
 	free(buf);
+
+		printf("\ncsnd");
+
 	csndExecCmds(true);
+
+		printf("\ncsnd SPS");
+
 	CSND_SetPlayState(0x8, 0);
+
+		printf("\ncsnd");
+
 	csndExecCmds(true);
+
+		printf("\nmemset");
+
 	memset(sndBuf, 0, sndSize);
+
+		printf("\nGSP");
+
 	GSPGPU_FlushDataCache(NULL, sndBuf, sndSize);
+
+		printf("Dump da Sound");
+
+	csndExit();
+
+		printf("\nlinfree");
+
 	linearFree(sndBuf);
-	csndExecCmds(true);
+
+		printf("\ncsnd");
+
+//	csndExecCmds(true);
+
+		printf("\nclean");
+
 	cleanup();
 
 	// Return to hbmenu
