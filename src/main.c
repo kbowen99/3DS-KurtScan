@@ -1,3 +1,4 @@
+//#include
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -10,11 +11,10 @@
 #include <stdbool.h>
 #include <3ds/svc.h>
 #include "mem.h"
-//#include
 
+//#define
 #define CONFIG_3D_SLIDERSTATE (*(volatile float*)0x1FF81080)
 #define WAIT_TIMEOUT 300000000ULL
-
 #define WIDTH 400
 #define HEIGHT 240
 #define SCREEN_SIZE WIDTH * HEIGHT * 2
@@ -42,14 +42,14 @@ void hang(char *message) {
 	}
 }
 
+//final closing
 void cleanup() {
-	//csndExit();
 	camExit();
 	gfxExit();
 	acExit();
-	//srvExit();
 }
 
+//draw to top screen
 void writePictureToFramebufferRGB565(void *fb, void *img, u16 x, u16 y, u16 width, u16 height) {
 	u8 *fb_8 = (u8*) fb;
 	u16 *img_16 = (u16*) img;
@@ -70,7 +70,7 @@ void writePictureToFramebufferRGB565(void *fb, void *img, u16 x, u16 y, u16 widt
 	}
 }
 
-// TODO: Figure out how to use CAMU_GetStereoCameraCalibrationData
+// take picture (Semi-3D) --- use CAMU_GetStereoCameraCalibrationData
 void takePicture3D(u8 *buf) {
 	u32 bufSize;
 	printf("CAMU_GetMaxBytes: 0x%08X\n", (unsigned int) CAMU_GetMaxBytes(&bufSize, WIDTH, HEIGHT));
@@ -101,7 +101,7 @@ void takePicture3D(u8 *buf) {
 }
 
 
-
+//code from 3DS Paint, used to screenshot
 bool SaveDrawing(char* path)
 {
 	int x, y;
@@ -158,7 +158,9 @@ bool SaveDrawing(char* path)
 	return true;
  }
 
+//code to sun 3DS paint's code
 void screenShot() {
+	//time is used as lazy sorting - also taken from 3DS Paint
 	u32 timestamp = (u32)(svcGetSystemTick() / 446872);
 	char file[256];
 	snprintf(file, 256, "/cam/pic%08d.bmp", timestamp);
@@ -167,18 +169,15 @@ void screenShot() {
 	}
 }
 
-
-
-
-
+//Biggest & Baddest doer of things
 int main() {
 	// Initializations
-	//srvInit();
 	acInit();
 	gfxInitDefault();
 	csndInit();
 	consoleInit(GFX_BOTTOM, NULL);
 
+	//loading of ton.wav into ram
 	FILE *file = fopen("tone.wav", "rb");
 	fseek(file, 0, SEEK_END);
 	u32 sndSize = ftell(file);
@@ -206,22 +205,20 @@ int main() {
 	u32 kDown;
 	u32 kHeld;
 
+	//Debug & setup
 	printf("Initializing camera\n");
-
 	printf("camInit: 0x%08X\n", (unsigned int) camInit());
-
 	printf("CAMU_SetSize: 0x%08X\n", (unsigned int) CAMU_SetSize(SELECT_OUT1_OUT2, SIZE_CTR_TOP_LCD, CONTEXT_A));
 	printf("CAMU_SetOutputFormat: 0x%08X\n", (unsigned int) CAMU_SetOutputFormat(SELECT_OUT1_OUT2, OUTPUT_RGB_565, CONTEXT_A));
-
 	printf("CAMU_SetNoiseFilter: 0x%08X\n", (unsigned int) CAMU_SetNoiseFilter(SELECT_OUT1_OUT2, true));
 	printf("CAMU_SetAutoExposure: 0x%08X\n", (unsigned int) CAMU_SetAutoExposure(SELECT_OUT1_OUT2, true));
 	printf("CAMU_SetAutoWhiteBalance: 0x%08X\n", (unsigned int) CAMU_SetAutoWhiteBalance(SELECT_OUT1_OUT2, true));
 	//printf("CAMU_SetEffect: 0x%08X\n", (unsigned int) CAMU_SetEffect(SELECT_OUT1_OUT2, EFFECT_MONO, CONTEXT_A));
-
 	printf("CAMU_SetTrimming: 0x%08X\n", (unsigned int) CAMU_SetTrimming(PORT_CAM1, false));
 	printf("CAMU_SetTrimming: 0x%08X\n", (unsigned int) CAMU_SetTrimming(PORT_CAM2, false));
 	//printf("CAMU_SetTrimmingParamsCenter: 0x%08X\n", (unsigned int) CAMU_SetTrimmingParamsCenter(PORT_CAM1, 512, 240, 512, 384));
 
+	//small safety measure
 	u8 *buf = malloc(BUF_SIZE);
 	if(!buf) {
 		hang("Failed to allocate memory!");
@@ -232,13 +229,6 @@ int main() {
 	gfxSwapBuffers();
 
 	bool held_R = false;
-
-	printf("\nPress R to take a new picture\n");
-	printf("Use slider to enable/disable 3D\n");
-	printf("Press Start to exit to Homebrew Launcher\n");
-
-
-
 	int i = 0;
 	int waitTime = 500;
 	int count = 0;
@@ -246,6 +236,10 @@ int main() {
 	bool setup = false;
 
 	consoleClear();
+	//inform user
+	printf("\nMaxCount (Left/Right)\n");
+	printf("\nWaitTime (Up/Down)\n");
+	printf("\nPress 'A' to finish Setup\n");
 	while(!setup){
 
 		hidScanInput();
@@ -281,12 +275,13 @@ int main() {
 			printf("\nWaitTime (Up/Down)\n");
 			printf(w);
 			printf("\nPress 'A' to finish Setup\n");
-			printf("Waiting...");
+			printf("Waiting..."); //Text that usually fails to get written...
 
 		}
 	}
 
-	printf("Press Start to exit to Homebrew Launcher\n");
+	//Forgetful users
+	printf("\nPress Start to exit to Homebrew Launcher\n");
 	printf("Starting auto Capture...\n");
 
 	// Main loop
@@ -301,15 +296,15 @@ int main() {
 			break;
 		}
 
+		//Logic is Weird...
 		if ((kHeld & KEY_R) && !held_R) {
 			held_R = true;
 		}
-
-
 		if (!(kHeld & KEY_R)) {
 			held_R = false;
 		}
 
+		//photo takin code
 		if (held_R || (i == waitTime && count < maxCount)){
 			printf("Capturing new image\n");
 			gfxFlushBuffers();
@@ -319,7 +314,7 @@ int main() {
 			takePicture3D(buf);
 			screenShot();
 
-			//Beep();
+			//Beep(); if only...
 			csndPlaySound(0x8, SOUND_FORMAT_16BIT, 44100, 1, 0, sndBuf, sndBuf, sndSize);
 			i = 0;
 			count = count + 1;
@@ -327,9 +322,7 @@ int main() {
 			i = i + 1;
 		}
 
-
-
-
+		//3D needs to be implemented...
 		if(CONFIG_3D_SLIDERSTATE > 0.0f) {
 			gfxSet3D(true);
 			writePictureToFramebufferRGB565(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL), buf, 0, 0, WIDTH, HEIGHT);
@@ -349,44 +342,15 @@ int main() {
 
 	printf("\nClosing App");
 
-		printf("\nfreeing buf");
 	// Exit
 	free(buf);
-
-		printf("\ncsnd");
-
 	csndExecCmds(true);
-
-		printf("\ncsnd SPS");
-
 	CSND_SetPlayState(0x8, 0);
-
-		printf("\ncsnd");
-
 	csndExecCmds(true);
-
-		printf("\nmemset");
-
 	memset(sndBuf, 0, sndSize);
-
-		printf("\nGSP");
-
 	GSPGPU_FlushDataCache(NULL, sndBuf, sndSize);
-
-		printf("Dump da Sound");
-
 	csndExit();
-
-		printf("\nlinfree");
-
 	linearFree(sndBuf);
-
-		printf("\ncsnd");
-
-//	csndExecCmds(true);
-
-		printf("\nclean");
-
 	cleanup();
 
 	// Return to hbmenu
